@@ -213,7 +213,8 @@ class Daemon {
 			this.queue.add(() => {
 				const directory = path.resolve(CANVAS_HOME, name)
 				if (!fs.existsSync(directory)) {
-					return res.status(StatusCodes.NOT_FOUND).end()
+					// there is nothing to delete
+					return res.status(StatusCodes.OK).end()
 				}
 
 				fs.rmSync(directory, { recursive: true })
