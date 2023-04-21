@@ -147,7 +147,7 @@ export function getAPI(core: Core, options: Partial<Options> = {}): express.Expr
 		api.get("/messages", async (req, res) => {
 			const { limit, offset, type, app } = req.query
 
-			const filter: { type?: Message["type"]; limit?: number; offset: number; app?: string } = {}
+			const filter: { type?: Message["type"]; limit?: number; offset?: number; app?: string } = {}
 
 			if (typeof type === "string") {
 				if (type === "action" || type === "session" || type === "customAction") {
