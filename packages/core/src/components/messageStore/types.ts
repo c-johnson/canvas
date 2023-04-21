@@ -27,6 +27,7 @@ export interface MessageStore extends EventEmitter<MessageStoreEvents> {
 	getMessageStream(filter?: {
 		type?: Message["type"]
 		limit?: number
+		offset?: number
 		app?: string
 	}): AsyncIterable<[Uint8Array, Message]>
 
