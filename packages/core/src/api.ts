@@ -145,9 +145,9 @@ export function getAPI(core: Core, options: Partial<Options> = {}): express.Expr
 
 	if (options.exposeMessages) {
 		api.get("/messages", async (req, res) => {
-			const { limit, type, app } = req.query
+			const { limit, offset, type, app } = req.query
 
-			const filter: { type?: Message["type"]; limit?: number; app?: string } = {}
+			const filter: { type?: Message["type"]; limit?: number; offset: number; app?: string } = {}
 
 			if (typeof type === "string") {
 				if (type === "action" || type === "session" || type === "customAction") {
@@ -165,6 +165,8 @@ export function getAPI(core: Core, options: Partial<Options> = {}): express.Expr
 					return
 				}
 			}
+
+			filter.offset = typeof offset === "string" ? parseInt(offset) : -1
 
 			if (typeof app === "string") {
 				if (ipfsURIPattern.test(app)) {
