@@ -262,7 +262,7 @@ class SqliteMessageStore extends EventEmitter<MessageStoreEvents> implements Mes
 	// we can use statement.iterate() instead of paging manually
 	// https://github.com/WiseLibs/better-sqlite3/issues/406
 	public async *getMessageStream(
-		filter: { type?: Message["type"]; limit?: number; app?: string } = {}
+		filter: { type?: Message["type"]; limit?: number; offset?: number; app?: string } = {}
 	): AsyncIterable<[Uint8Array, Message]> {
 		const { type, limit, app } = filter
 		if (type === undefined) {

@@ -81,7 +81,7 @@ class IndexedDBMessageStore extends EventEmitter<MessageStoreEvents> implements 
 	}
 
 	public async *getMessageStream(
-		filter: { type?: Message["type"]; limit?: number; app?: string } = {}
+		filter: { type?: Message["type"]; limit?: number; offset?: number; app?: string } = {}
 	): AsyncIterable<[Uint8Array, Message]> {
 		const storeNames = filter.app ? [filter.app] : [this.app, ...this.sources]
 		const txn = this.db.transaction(storeNames, "readonly", {})
