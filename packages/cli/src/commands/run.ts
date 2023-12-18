@@ -12,7 +12,7 @@ import cors from "cors"
 import { multiaddr } from "@multiformats/multiaddr"
 
 import { Canvas } from "@canvas-js/core"
-import { createAPI } from "@canvas-js/core/api"
+import { createAPI, createMetricsAPI } from "@canvas-js/core/api"
 import { MIN_CONNECTIONS, MAX_CONNECTIONS } from "@canvas-js/core/constants"
 import { defaultBootstrapList, testnetBootstrapList } from "@canvas-js/core/bootstrap"
 
@@ -193,7 +193,7 @@ export async function handler(args: Args) {
 		console.log(chalk.gray(`[canvas] Closed connection to ${peer} at ${addr}`))
 	})
 
-	app.messageLog.addEventListener("message", ({ detail: { id, message } }) => {
+	app.addEventListener("message", ({ detail: { id, message } }) => {
 		if (args["verbose"]) {
 			const { type, ...payload } = message.payload
 			console.log(`[canvas] Applied message ${chalk.green(id)}`, { type, ...payload })
@@ -210,7 +210,7 @@ export async function handler(args: Args) {
 		}
 	})
 
-	app.messageLog.addEventListener("sync", ({ detail: { peer, duration, messageCount } }) => {
+	app.addEventListener("sync", ({ detail: { peer, duration, messageCount } }) => {
 		console.log(
 			chalk.magenta(
 				`[canvas] Completed merkle sync with peer ${peer}: applied ${messageCount} messages in ${duration}ms`,
@@ -230,10 +230,11 @@ export async function handler(args: Args) {
 
 	const api = express()
 	api.use(cors())
-	api.use(
-		"/api",
-		createAPI(app, { exposeMetrics: args.metrics, exposeP2P: true, exposeModels: true, exposeMessages: true }),
-	)
+	api.use("/api", createAPI(app, { exposeP2P: true, exposeModels: true, exposeMessages: true }))
+
+	if (args.metrics) {
+		api.use("/metrics", createMetricsAPI(app))
+	}
 
 	if (args.static !== undefined) {
 		assert(/^(.\/)?\w[\w/]*$/.test(args.static), "Invalid directory for static files")
