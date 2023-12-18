@@ -114,6 +114,8 @@ export const builder = (yargs: Argv) =>
 
 type Args = ReturnType<typeof builder> extends Argv<infer T> ? T : never
 
+const { ANNOUNCE, LISTEN } = process.env
+
 export async function handler(args: Args) {
 	const { contract, location } = getContractLocation(args)
 
@@ -127,7 +129,14 @@ export async function handler(args: Args) {
 		assert(typeof address === "string", "--announce address must be a string")
 		const addr = multiaddr(address)
 		const lastProtoName = addr.protoNames().pop()
-		assert(lastProtoName === "ws" || lastProtoName === "wss", "--announce address must be a /ws or /wss multiaddr")
+		assert(lastProtoName === "ws" || lastProtoName === "wss", "announce address must be a /ws or /wss multiaddr")
+		announce.push(address)
+	}
+
+	for (const address of ANNOUNCE?.split(" ") ?? []) {
+		const addr = multiaddr(address)
+		const lastProtoName = addr.protoNames().pop()
+		assert(lastProtoName === "ws" || lastProtoName === "wss", "announce address must be a /ws or /wss multiaddr")
 		announce.push(address)
 	}
 
@@ -136,7 +145,14 @@ export async function handler(args: Args) {
 		assert(typeof address === "string", "--listen address must be a string")
 		const addr = multiaddr(address)
 		const lastProtoName = addr.protoNames().pop()
-		assert(lastProtoName === "ws" || lastProtoName === "wss", "--listen address must be a /ws or /wss multiaddr")
+		assert(lastProtoName === "ws" || lastProtoName === "wss", "listen address must be a /ws or /wss multiaddr")
+		listen.push(address)
+	}
+
+	for (const address of LISTEN?.split(" ") ?? []) {
+		const addr = multiaddr(address)
+		const lastProtoName = addr.protoNames().pop()
+		assert(lastProtoName === "ws" || lastProtoName === "wss", "listen address must be a /ws or /wss multiaddr")
 		listen.push(address)
 	}
 
