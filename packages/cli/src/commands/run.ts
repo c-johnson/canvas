@@ -12,6 +12,10 @@ import cors from "cors"
 import { multiaddr } from "@multiformats/multiaddr"
 import { WebSockets, WebSocketsSecure } from "@multiformats/multiaddr-matcher"
 
+import dotenv from "dotenv"
+
+dotenv.config()
+
 import { Canvas } from "@canvas-js/core"
 import { createAPI, createMetricsAPI } from "@canvas-js/core/api"
 import { MIN_CONNECTIONS, MAX_CONNECTIONS } from "@canvas-js/core/constants"
