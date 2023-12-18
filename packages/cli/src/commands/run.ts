@@ -10,6 +10,7 @@ import express from "express"
 import cors from "cors"
 
 import { multiaddr } from "@multiformats/multiaddr"
+import { WebSockets, WebSocketsSecure } from "@multiformats/multiaddr-matcher"
 
 import { Canvas } from "@canvas-js/core"
 import { createAPI, createMetricsAPI } from "@canvas-js/core/api"
@@ -26,6 +27,8 @@ import { getContractLocation } from "../utils.js"
 
 export const command = "run <path>"
 export const desc = "Run a Canvas application"
+
+const { ANNOUNCE, LISTEN, BOOTSTRAP_LIST } = process.env
 
 export const builder = (yargs: Argv) =>
 	yargs
@@ -51,11 +54,12 @@ export const builder = (yargs: Argv) =>
 		.option("listen", {
 			type: "array",
 			desc: "Internal /ws multiaddr",
-			default: ["/ip4/0.0.0.0/tcp/4444/ws"],
+			default: LISTEN?.split(" ") ?? ["/ip4/0.0.0.0/tcp/4444/ws"],
 		})
 		.option("announce", {
 			type: "array",
 			desc: "External /ws multiaddr, e.g. /dns4/myapp.com/tcp/4444/ws",
+			default: ANNOUNCE?.split(" ") ?? [],
 		})
 		.option("replay", {
 			type: "boolean",
@@ -114,8 +118,6 @@ export const builder = (yargs: Argv) =>
 
 type Args = ReturnType<typeof builder> extends Argv<infer T> ? T : never
 
-const { ANNOUNCE, LISTEN } = process.env
-
 export async function handler(args: Args) {
 	const { contract, location } = getContractLocation(args)
 
@@ -125,34 +127,26 @@ export async function handler(args: Args) {
 	}
 
 	const announce: string[] = []
-	for (const address of args.announce ?? []) {
-		assert(typeof address === "string", "--announce address must be a string")
+	for (const address of args.announce) {
+		assert(typeof address === "string", "announce address must be a string")
 		const addr = multiaddr(address)
-		const lastProtoName = addr.protoNames().pop()
-		assert(lastProtoName === "ws" || lastProtoName === "wss", "announce address must be a /ws or /wss multiaddr")
-		announce.push(address)
-	}
+		assert(
+			WebSockets.exactMatch(addr) || WebSocketsSecure.exactMatch(addr),
+			"announce address must be a /ws or /wss multiaddr",
+		)
 
-	for (const address of ANNOUNCE?.split(" ") ?? []) {
-		const addr = multiaddr(address)
-		const lastProtoName = addr.protoNames().pop()
-		assert(lastProtoName === "ws" || lastProtoName === "wss", "announce address must be a /ws or /wss multiaddr")
 		announce.push(address)
 	}
 
 	const listen: string[] = []
-	for (const address of args.listen ?? []) {
-		assert(typeof address === "string", "--listen address must be a string")
+	for (const address of args.listen) {
+		assert(typeof address === "string", "listen address must be a string")
 		const addr = multiaddr(address)
-		const lastProtoName = addr.protoNames().pop()
-		assert(lastProtoName === "ws" || lastProtoName === "wss", "listen address must be a /ws or /wss multiaddr")
-		listen.push(address)
-	}
+		assert(
+			WebSockets.exactMatch(addr) || WebSocketsSecure.exactMatch(addr),
+			"listen address must be a /ws or /wss multiaddr",
+		)
 
-	for (const address of LISTEN?.split(" ") ?? []) {
-		const addr = multiaddr(address)
-		const lastProtoName = addr.protoNames().pop()
-		assert(lastProtoName === "ws" || lastProtoName === "wss", "listen address must be a /ws or /wss multiaddr")
 		listen.push(address)
 	}
 
@@ -166,10 +160,15 @@ export async function handler(args: Args) {
 		console.log(chalk.yellowBright("[canvas] Using custom bootstrap servers"))
 		bootstrapList = []
 		for (const address of args.bootstrap) {
-			if (typeof address === "string") {
-				console.log(chalk.yellowBright(`[canvas] - ${address}`))
-				bootstrapList.push(address)
-			}
+			assert(typeof address === "string", "bootstrap address must be a string")
+			console.log(chalk.yellowBright(`[canvas] - ${address}`))
+			bootstrapList.push(address)
+		}
+	} else if (BOOTSTRAP_LIST !== undefined) {
+		bootstrapList = BOOTSTRAP_LIST.split(" ")
+		console.log(chalk.yellowBright("[canvas] Using custom bootstrap servers"))
+		for (const address of bootstrapList) {
+			console.log(chalk.yellowBright(`[canvas] - ${address}`))
 		}
 	} else {
 		console.log(chalk.gray("[canvas] Using default Canvas bootstrap servers"))
