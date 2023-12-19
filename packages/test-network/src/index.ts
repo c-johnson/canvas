@@ -29,34 +29,39 @@ const cacheDirectory = path.resolve(".cache")
 
 const controller = new AbortController()
 
-const bootstrapListenAddress = `/ip4/127.0.0.1/tcp/8080/ws`
+const bootstrapListenAddress = `/ip4/127.0.0.1/tcp/9000/ws`
 const bootstrapAPIPort = 8000
 const bootstrapPeerId = await createEd25519PeerId()
 
-{
-	const { pathname: bootstrapPeerPath } = new URL(import.meta.resolve("@canvas-js/bootstrap-peer"))
+// {
+// 	const { pathname: bootstrapPeerPath } = new URL(import.meta.resolve("@canvas-js/bootstrap-peer"))
 
-	const bootstrapPeer = spawn("node", [bootstrapPeerPath], {
-		env: {
-			...process.env,
-			PEER_ID: Buffer.from(exportToProtobuf(bootstrapPeerId)).toString("base64"),
-			LISTEN: bootstrapListenAddress,
-			PORT: bootstrapAPIPort.toString(),
-			DISCOVERY_TOPIC: discoveryTopic,
-		},
-		signal: controller.signal,
-		killSignal: "SIGINT",
-	})
+// 	const bootstrapPeer = spawn("node", [bootstrapPeerPath], {
+// 		env: {
+// 			...process.env,
+// 			PEER_ID: Buffer.from(exportToProtobuf(bootstrapPeerId)).toString("base64"),
+// 			LISTEN: bootstrapListenAddress,
+// 			PORT: bootstrapAPIPort.toString(),
+// 			DISCOVERY_TOPIC: discoveryTopic,
+// 		},
+// 		signal: controller.signal,
+// 		killSignal: "SIGINT",
+// 	})
 
-	bootstrapPeer.on("error", (err) => console.error(err))
-	bootstrapPeer.stdout.pipe(process.stdout)
-}
+// 	bootstrapPeer.on("error", (err) => console.error(err))
+// 	bootstrapPeer.stdout.pipe(process.stdout)
+// }
 
 const bootstrapList = [`${bootstrapListenAddress}/p2p/${bootstrapPeerId.toString()}`]
 
-// Start replication servers
+const prometheusTargets = [`localhost:${bootstrapAPIPort}`]
+
+// Start CLI servers
 const { pathname: cliPath } = new URL(import.meta.resolve("@canvas-js/cli"))
 for (let i = 0; i < serverCount; i++) {
+	const port = 8000 + 1 + i
+	prometheusTargets.push(`localhost:${port}`)
+
 	const server = spawn(
 		"node",
 		[
@@ -66,11 +71,13 @@ for (let i = 0; i < serverCount; i++) {
 			"--init",
 			path.resolve("assets/contract.canvas.js"),
 			"--listen",
-			`/ip4/127.0.0.1/tcp/${9000 + i}/ws`,
+			`/ip4/127.0.0.1/tcp/${9000 + 1 + i}/ws`,
 			...bootstrapList.flatMap((address) => ["--bootstrap", address]),
 			"--discovery-topic",
 			discoveryTopic,
-			"--disable-http-api",
+			"--metrics",
+			"--port",
+			port.toString(),
 		],
 		{ signal: controller.signal, killSignal: "SIGINT" },
 	)
@@ -114,7 +121,7 @@ for (let i = 0; i < serverCount; i++) {
 }
 
 // Start HTTP server
-const port = 3000
+const port = 8888
 
 {
 	// Step 2: start an HTTP server
@@ -155,10 +162,20 @@ await Promise.all(
             localStorage.setItem("discoveryTopic", "${discoveryTopic}");
         `)
 
-		await page.goto("http://localhost:3000/")
+		await page.goto(`http://localhost:${port}/`)
 
 		controller.signal.addEventListener("abort", () => browser.close())
 	}),
 )
 
 process.on("SIGINT", () => controller.abort())
+
+// Write the prometheus config to prometheus.yml
+const config = `
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ${JSON.stringify(prometheusTargets)}
+`
+
+fs.writeFileSync("prometheus.yml", config)

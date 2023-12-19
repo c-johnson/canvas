@@ -1,0 +1,54 @@
+version: "3"
+services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+    networks:
+      - prom-net
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    networks:
+      - prom-net
+
+  bootstrap-peer:
+    build:
+      context: ../bootstrap-peer
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+    networks:
+      - prom-net
+
+  replication-server:
+    build:
+      context: ../../examples/chat-server
+    env_file:
+      - .env.server
+    environment:
+      - PORT=8000
+    volumes:
+      - /data
+    networks:
+      - prom-net
+
+networks:
+  prom-net:
