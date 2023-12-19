@@ -32,7 +32,7 @@ import { getContractLocation } from "../utils.js"
 export const command = "run <path>"
 export const desc = "Run a Canvas application"
 
-const { ANNOUNCE, LISTEN, BOOTSTRAP_LIST } = process.env
+const { ANNOUNCE, LISTEN, BOOTSTRAP_LIST, PORT } = process.env
 
 export const builder = (yargs: Argv) =>
 	yargs
@@ -48,7 +48,7 @@ export const builder = (yargs: Argv) =>
 		.option("port", {
 			desc: "HTTP API port",
 			type: "number",
-			default: 8000,
+			default: parseInt(PORT ?? "8000"),
 		})
 		.option("offline", {
 			type: "boolean",
