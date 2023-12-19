@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@canvas-js/test-network",
-  "version": "0.8.14",
+  "version": "0.8.15",
   "type": "module",
   "author": "Canvas Technologies, Inc. (https://canvas.xyz)",
   "main": "lib/index.js",
@@ -21,8 +21,8 @@
     "@types/debug": "^4.1.12"
   },
   "dependencies": {
-    "@canvas-js/cli": "0.8.14",
-    "@canvas-js/core": "0.8.14",
+    "@canvas-js/cli": "0.8.15",
+    "@canvas-js/core": "0.8.15",
     "@libp2p/peer-id-factory": "^4.0.1",
     "concurrently": "^8.2.2",
     "debug": "^4.3.4",
