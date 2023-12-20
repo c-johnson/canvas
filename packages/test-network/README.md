@@ -3,7 +3,7 @@
 Start the testnet with:
 
 ```
-docker-compose up -d
+docker-compose up -d --scale replication-server=3
 ```
 
 Then open the network connectivity dashboard: http://localhost:3000/d/bbc13c60-e72d-475d-a14c-115a7f5ffabf/network-connectivity
