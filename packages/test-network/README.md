@@ -1,17 +1,21 @@
 # @canvas-js/test-network
 
-Start the testnet with:
+Start the Prometheus and Grafana services:
 
 ```
-docker-compose up -d --scale replication-server=3
+docker-compose up
 ```
 
 Then open the network connectivity dashboard: http://localhost:3000/d/bbc13c60-e72d-475d-a14c-115a7f5ffabf/network-connectivity
 
-Stop the testnet with:
+Start the testnet:
 
 ```
-docker-compose down -v
+npm run start
 ```
 
-The `-v` flag tells Docker to remove the anonymous volumes attached to the containers (ie reset the persistent data). If you want to persist the message logs, model databases, etc. then just use `docker-compose down`.
+Or override the number of servers/clients:
+
+```
+SERVER_COUNT=5 CLIENT_COUNT=10 npm run start
+```

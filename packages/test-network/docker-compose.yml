@@ -29,27 +29,27 @@ services:
     networks:
       - prom-net
 
-  bootstrap-peer:
-    build:
-      context: ../bootstrap-peer
-    env_file:
-      - .env
-    environment:
-      - PORT=8000
-    networks:
-      - prom-net
+  # bootstrap-peer:
+  #   build:
+  #     context: ../bootstrap-peer
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     - PORT=8000
+  #   networks:
+  #     - prom-net
 
-  replication-server:
-    build:
-      context: ../../examples/chat-server
-    env_file:
-      - .env.server
-    environment:
-      - PORT=8000
-    volumes:
-      - /data
-    networks:
-      - prom-net
+  # replication-server:
+  #   build:
+  #     context: ../../examples/chat-server
+  #   env_file:
+  #     - .env.server
+  #   environment:
+  #     - PORT=8000
+  #   volumes:
+  #     - /data
+  #   networks:
+  #     - prom-net
 
 networks:
   prom-net:

@@ -33,54 +33,52 @@ const bootstrapListenAddress = `/ip4/127.0.0.1/tcp/9000/ws`
 const bootstrapAPIPort = 8000
 const bootstrapPeerId = await createEd25519PeerId()
 
-// {
-// 	const { pathname: bootstrapPeerPath } = new URL(import.meta.resolve("@canvas-js/bootstrap-peer"))
+{
+	const { pathname: bootstrapPeerPath } = new URL(import.meta.resolve("@canvas-js/bootstrap-peer"))
 
-// 	const bootstrapPeer = spawn("node", [bootstrapPeerPath], {
-// 		env: {
-// 			...process.env,
-// 			PEER_ID: Buffer.from(exportToProtobuf(bootstrapPeerId)).toString("base64"),
-// 			LISTEN: bootstrapListenAddress,
-// 			PORT: bootstrapAPIPort.toString(),
-// 			DISCOVERY_TOPIC: discoveryTopic,
-// 		},
-// 		signal: controller.signal,
-// 		killSignal: "SIGINT",
-// 	})
+	const bootstrapPeer = spawn("node", [bootstrapPeerPath], {
+		env: {
+			...process.env,
+			PEER_ID: Buffer.from(exportToProtobuf(bootstrapPeerId)).toString("base64"),
+			LISTEN: bootstrapListenAddress,
+			PORT: bootstrapAPIPort.toString(),
+			DISCOVERY_TOPIC: discoveryTopic,
+		},
+		signal: controller.signal,
+		killSignal: "SIGINT",
+	})
 
-// 	bootstrapPeer.on("error", (err) => console.error(err))
-// 	bootstrapPeer.stdout.pipe(process.stdout)
-// }
+	bootstrapPeer.on("error", (err) => console.error(err))
+	bootstrapPeer.stdout.pipe(process.stdout)
+}
 
 const bootstrapList = [`${bootstrapListenAddress}/p2p/${bootstrapPeerId.toString()}`]
 
-const prometheusTargets = [`localhost:${bootstrapAPIPort}`]
+const prometheusTargets: string[] = []
 
 // Start CLI servers
 const { pathname: cliPath } = new URL(import.meta.resolve("@canvas-js/cli"))
 for (let i = 0; i < serverCount; i++) {
 	const port = 8000 + 1 + i
-	prometheusTargets.push(`localhost:${port}`)
+	prometheusTargets.push(`host.docker.internal:${port}`)
 
-	const server = spawn(
-		"node",
-		[
-			cliPath,
-			"run",
-			path.resolve(cacheDirectory, `server-${i}`),
-			"--init",
-			path.resolve("assets/contract.canvas.js"),
-			"--listen",
-			`/ip4/127.0.0.1/tcp/${9000 + 1 + i}/ws`,
-			...bootstrapList.flatMap((address) => ["--bootstrap", address]),
-			"--discovery-topic",
-			discoveryTopic,
-			"--metrics",
-			"--port",
-			port.toString(),
-		],
-		{ signal: controller.signal, killSignal: "SIGINT" },
-	)
+	const nodeArgs = [
+		cliPath,
+		"run",
+		path.resolve(cacheDirectory, `server-${i}`),
+		"--init",
+		path.resolve("assets/contract.canvas.js"),
+		"--listen",
+		`/ip4/127.0.0.1/tcp/${9000 + 1 + i}/ws`,
+		...bootstrapList.flatMap((address) => ["--bootstrap", address]),
+		"--discovery-topic",
+		discoveryTopic,
+		"--port",
+		port.toString(),
+		"--metrics",
+	]
+
+	const server = spawn("node", nodeArgs, { signal: controller.signal, killSignal: "SIGINT" })
 
 	server.on("error", (err) => console.error(`[server-${i}]`, err))
 
@@ -123,20 +121,33 @@ for (let i = 0; i < serverCount; i++) {
 // Start HTTP server
 const port = 8888
 
-{
-	// Step 2: start an HTTP server
-	const app = express()
-	app.use("/", express.static("assets"))
-	app.use("/dist", express.static("dist"))
-	await new Promise<void>((resolve) => {
-		const server = app.listen(port, () => {
-			console.log(`HTTP server listening on http://localhost:${port}`)
-			resolve()
-		})
-
-		controller.signal.addEventListener("abort", () => server.close())
+const app = express()
+app.use(express.text())
+app.use(express.json())
+app.use("/", express.static("assets"))
+app.use("/dist", express.static("dist"))
+await new Promise<void>((resolve) => {
+	const server = app.listen(port, () => {
+		console.log(`HTTP server listening on http://localhost:${port}`)
+		resolve()
 	})
-}
+
+	controller.signal.addEventListener("abort", () => server.close())
+})
+
+// https://prometheus.io/docs/prometheus/latest/configuration/configuration/#http_sd_config
+app.use("/api/services", (req, res) =>
+	res.json([
+		{
+			targets: [`host.docker.internal:${bootstrapAPIPort}`],
+			labels: { service: "bootstrap" },
+		},
+		{
+			targets: prometheusTargets,
+			labels: { service: "server" },
+		},
+	]),
+)
 
 // Start puppeteer clients
 await Promise.all(
@@ -169,13 +180,3 @@ await Promise.all(
 )
 
 process.on("SIGINT", () => controller.abort())
-
-// Write the prometheus config to prometheus.yml
-const config = `
-scrape_configs:
-  - job_name: "prometheus"
-    static_configs:
-      - targets: ${JSON.stringify(prometheusTargets)}
-`
-
-fs.writeFileSync("prometheus.yml", config)
