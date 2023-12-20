@@ -247,22 +247,22 @@ export async function handler(args: Args) {
 
 	// await app.start()
 
-	const api = express()
-	api.use(cors())
-	api.use("/api", createAPI(app, { exposeP2P: true, exposeModels: true, exposeMessages: true }))
-
-	if (args.metrics) {
-		api.use("/metrics", createMetricsAPI(app))
-	}
-
-	if (args.static !== undefined) {
-		assert(/^(.\/)?\w[\w/]*$/.test(args.static), "Invalid directory for static files")
-		assert(fs.existsSync(args.static), "Invalid directory for static files (path not found)")
-		api.use(express.static(args.static))
-	}
-
 	if (!args["disable-http-api"]) {
 		const origin = `http://localhost:${args.port}`
+
+		const api = express()
+		api.use(cors())
+		api.use("/api", createAPI(app, { exposeP2P: true, exposeModels: true, exposeMessages: true }))
+
+		if (args.metrics) {
+			api.use("/metrics", createMetricsAPI(app))
+		}
+
+		if (args.static !== undefined) {
+			assert(/^(.\/)?\w[\w/]*$/.test(args.static), "Invalid directory for static files")
+			assert(fs.existsSync(args.static), "Invalid directory for static files (path not found)")
+			api.use(express.static(args.static))
+		}
 
 		const server = stoppable(
 			http.createServer(api).listen(args.port, () => {
@@ -270,7 +270,7 @@ export async function handler(args: Args) {
 					console.log(`Serving static bundle: ${chalk.bold(origin)}`)
 				}
 
-				console.log(`Serving HTTP API:`)
+				console.log(`Serving HTTP API`)
 				console.log(`└ GET  ${origin}/api/`)
 
 				console.log(`└ GET  ${origin}/api/clock`)
@@ -287,6 +287,10 @@ export async function handler(args: Args) {
 				console.log(`└ GET  ${origin}/api/connections`)
 				console.log(`└ GET  ${origin}/api/peers`)
 				console.log(`└ POST ${origin}/api/ping/:peerId`)
+
+				if (args.metrics) {
+					console.log(`└ GET  ${origin}/metrics`)
+				}
 			}),
 			0,
 		)
