@@ -3,7 +3,7 @@ import express from "express"
 import { StatusCodes } from "http-status-codes"
 import { AbortError } from "abortable-iterator"
 import { anySignal } from "any-signal"
-import { Counter, Gauge, Summary, Registry, register } from "prom-client"
+import { Counter, Gauge, Summary, Registry, register as libp2pRegister } from "prom-client"
 
 import type { PeerId } from "@libp2p/interface"
 import { peerIdFromString } from "@libp2p/peer-id"
@@ -211,6 +211,7 @@ export function createMetricsAPI(app: Canvas): express.Express {
 			async collect() {
 				if (app.libp2p !== null) {
 					const { pubsub } = app.libp2p.services
+					app.libp2p.services.pubsub.getPeers()
 					for (const topic of pubsub.getTopics() ?? []) {
 						const subscribers = pubsub.getSubscribers(topic)
 						this.set({ topic }, subscribers.length)
@@ -231,10 +232,11 @@ export function createMetricsAPI(app: Canvas): express.Express {
 	const api = express()
 
 	api.get("/", async (req, res) => {
-		const appMetrics = await canvasRegister.metrics()
-		const libp2pMetrics = await register.metrics()
-		res.header("Content-Type", register.contentType)
-		res.write(appMetrics + "\n")
+		const canvasMetrics = await canvasRegister.metrics()
+		const libp2pMetrics = await libp2pRegister.metrics()
+
+		res.header("Content-Type", libp2pRegister.contentType)
+		res.write(canvasMetrics + "\n")
 		res.write(libp2pMetrics + "\n")
 		res.end()
 	})
