@@ -30,6 +30,7 @@
     { "path": "./packages/replication-server" },
     { "path": "./packages/hooks" },
     { "path": "./packages/templates" },
-    { "path": "./packages/test-network" }
+    { "path": "./packages/test-network" },
+    { "path": "./packages/hidden-service" }
   ]
 }

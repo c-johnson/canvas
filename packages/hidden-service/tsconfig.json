@@ -1,0 +1,14 @@
+{
+  "include": ["src"],
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "rootDir": "src",
+    "outDir": "lib"
+  },
+  "references": [
+    { "path": "../core" },
+    { "path": "../gossiplog" },
+    { "path": "../chain-ethereum" }
+  ]
+}
