@@ -24,26 +24,12 @@ const heroImageSlotExists = inject('hero-image-slot-exists') as Ref<boolean>
           </h1>
           <p class="text">
           <span v-if="text" v-html="text"></span>
-          <span
-            class="vue-motion"
-            v-motion
-                    :style='{
-                      height: "30px",
-                      width: "19px",
-                      position: "absolute",
-                      backgroundColor: "var(--vp-c-brand-1)",
-                      display: "inline-block",
-                      borderRadius: "2px",
-                    }'
-                    :initial='{ opacity: 0, scale: 1 }'
-                    :enter='{ to: { backgroundColor: "#fff" }, opacity: 0.9, scale: 0.98, transition: { repeat: Infinity, repeatType: "mirror", duration: 800, ease: "easeOut" } }'
-></span>
 </p>
           <p v-if="tagline" v-html="tagline" class="tagline"></p>
           <p v-if="bullets" class="bullets">
             <ul>
-              <li class="bullet" v-for="bullet in bullets">
-                {{ bullet }}
+              <li class="bullet" v-for="[tag, bullet] in bullets">
+                <strong>{{ tag }}</strong>: {{ bullet }}
               </li>
             </ul>
           </p>
@@ -160,7 +146,7 @@ const heroImageSlotExists = inject('hero-image-slot-exists') as Ref<boolean>
 @media (min-width: 640px) {
   .name,
   .text {
-    max-width: 500px;
+    max-width: 400px;
     line-height: 1.18;
     font-size: 34px;
   }
@@ -206,6 +192,9 @@ const heroImageSlotExists = inject('hero-image-slot-exists') as Ref<boolean>
 }
 .bullets ul li {
   padding-left: 6px;
+}
+.bullets ul li strong {
+  color: var(--vp-c-text-1);
 }
 @media (min-width: 960px) {
   .bullets {

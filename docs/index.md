@@ -2,7 +2,7 @@
 layout: home
 ---
 
-<HeroRow text="The peer-to-peer application runtime" :image="{ light: '/graphic_mainframe_4.png', dark: '/graphic_mainframe_3.png' }" tagline="Canvas is a stack for building any web application as a protocol that runs over peer-to-peer networking, with no blockchain required." v-bind:bullets="['Executes core application logic in a realtime, multiwriter database', 'Built on a sync engine, with libp2p and Prolly-trees', 'Fully programmable in TypeScript']">
+<HeroRow text="The framework for peer-to-peer applications" :image="{ light: '/graphic_mainframe_4.png', dark: '/graphic_mainframe_3.png' }" tagline="Canvas is a stack for building any web application as a protocol that runs over peer-to-peer networking." v-bind:bullets="[['Runs anywhere', 'Use it local-first or server-side'], ['Realtime sync', 'Built on libp2p, with a fast and efficient sync engine'], ['Fully programmable', 'Applications are easy to write with TypeScript, SQL, and IndexedDB']]">
   <HeroAction theme="brand big" text="Tutorial" href="/1-introduction" />
   <HeroAction theme="alt big" text="API Docs" href="/readme-core" />
   <HeroAction theme="alt big" text="Blog" href="/blog" />
@@ -16,9 +16,13 @@ layout: home
 </FeatureRow>
 -->
 
-<TextRow title="How it Works">
-  <TextItem>Canvas allows you to write realtime multiplayer applications, by expressing the core logic of your application as a set of functions running over libp2p.</TextItem>
-  <TextItem>User interactions are signed using a blockchain address or DID, relayed over libp2p, and executed in a CRDT VM that transparently merges actions from different users.</TextItem>
+<TextRow title="How it works">
+  <TextItem>Canvas gives you the benefits of collaborative real-time applications using <strong>decentralized server reconciliation</strong>.</TextItem>
+  <TextItem>This is inspired by MMOs, where clients and servers run the same code, and server state is synced back to clients.</TextItem>
+  <TextItem>But instead of relying on a central server as the source of truth, actions are stored on a Git-like causal log. We check for conflicts at write time, and resolve them using different strategies (last-write-wins, CRDTs, etc.)</TextItem>
+  <center><pre>[] --> [] --> [] --> [] --> []</pre></center>
+  <TextItem>This gives you the benefit of CRDTs across your entire application, without the cost of crafting and maintaining custom data structures.</TextItem>
+  <TextItem>Conflict resolution happens transparently, and you get the benefits of decentralized sync for free.</TextItem>
 </TextRow>
 
 <DemoToggle v-bind:options="['Game', 'Messaging']" defaultOption="Game"></DemoToggle>
